@@ -16,6 +16,19 @@ import dataset
 
 import models.crnn as crnn
 
+import matplotlib.pyplot as plt
+import numpy as np
+import torchvision
+
+# functions to show an image
+
+
+def imshow(img):
+    img = img / 2 + 0.5     # unnormalize
+    npimg = img.numpy()
+    plt.imshow(np.transpose(npimg, (1, 2, 0)))
+    plt.show()
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--trainroot', required=True, help='path to dataset')
@@ -36,7 +49,7 @@ parser.add_argument('--displayInterval', type=int, default=500, help='Interval t
 parser.add_argument('--n_test_disp', type=int, default=10, help='Number of samples to display when test')
 parser.add_argument('--valInterval', type=int, default=500, help='Interval to be displayed')
 parser.add_argument('--saveInterval', type=int, default=500, help='Interval to be displayed')
-parser.add_argument('--lr', type=float, default=0.01, help='learning rate for Critic, not used by adadealta')
+parser.add_argument('--lr', type=float, default=0.0001, help='learning rate for Critic, not used by adadealta')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--adam', action='store_true', help='Whether to use adam (default is rmsprop)')
 parser.add_argument('--adadelta', action='store_true', help='Whether to use adadelta (default is rmsprop)')
@@ -62,13 +75,14 @@ if torch.cuda.is_available() and not opt.cuda:
 
 train_dataset = dataset.lmdbDataset(root=opt.trainroot)
 assert train_dataset
-if not opt.random_sample:
-    sampler = dataset.randomSequentialSampler(train_dataset, opt.batchSize)
-else:
-    sampler = None
+# if not opt.random_sample:
+#     sampler = dataset.randomSequentialSampler(train_dataset, opt.batchSize)
+# else:
+#     sampler = None
 train_loader = torch.utils.data.DataLoader(
     train_dataset, batch_size=opt.batchSize,
-    shuffle=True, sampler=sampler,
+    shuffle=True,
+    # sampler=sampler,
     num_workers=int(opt.workers),
     collate_fn=dataset.alignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio=opt.keep_ratio))
 test_dataset = dataset.lmdbDataset(
@@ -92,10 +106,10 @@ def weights_init(m):
 
 
 crnn = crnn.CRNN(opt.imgH, nc, nclass, opt.nh)
-crnn.apply(weights_init)
-if opt.pretrained != '':
-    print('loading pretrained model from %s' % opt.pretrained)
-    crnn.load_state_dict(torch.load(opt.pretrained))
+# crnn.apply(weights_init)
+# if opt.pretrained != '':
+#     print('loading pretrained model from %s' % opt.pretrained)
+#     crnn.load_state_dict(torch.load(opt.pretrained))
 print(crnn)
 
 image = torch.FloatTensor(opt.batchSize, 3, opt.imgH, opt.imgH)
@@ -117,8 +131,7 @@ loss_avg = utils.averager()
 
 # setup optimizer
 if opt.adam:
-    optimizer = optim.Adam(crnn.parameters(), lr=opt.lr,
-                           betas=(opt.beta1, 0.999))
+    optimizer = optim.Adam(crnn.parameters(), lr=opt.lr)
 elif opt.adadelta:
     optimizer = optim.Adadelta(crnn.parameters())
 else:
@@ -175,6 +188,8 @@ def val(net, dataset, criterion, max_iter=100):
 def trainBatch(net, criterion, optimizer):
     data = train_iter.next()
     cpu_images, cpu_texts = data
+    # imshow(torchvision.utils.make_grid(cpu_images))
+    # print(cpu_texts)
     batch_size = cpu_images.size(0)
     utils.loadData(image, cpu_images)
     t, l = converter.encode(cpu_texts)
@@ -202,10 +217,14 @@ for epoch in range(opt.nepoch):
         loss_avg.add(cost)
         i += 1
 
-        if i % opt.displayInterval == 0:
-            print('[%d/%d][%d/%d] Loss: %f' %
-                  (epoch, opt.nepoch, i, len(train_loader), loss_avg.val()))
-            loss_avg.reset()
+        print('[%d/%d][%d/%d] Loss: %f' %
+              (epoch, opt.nepoch, i, len(train_loader), loss_avg.val()))
+        loss_avg.reset()
+
+        # if i % opt.displayInterval == 0:
+        #     print('[%d/%d][%d/%d] Loss: %f' %
+        #           (epoch, opt.nepoch, i, len(train_loader), loss_avg.val()))
+        #     loss_avg.reset()
 
         if i % opt.valInterval == 0:
             val(crnn, test_dataset, criterion)
