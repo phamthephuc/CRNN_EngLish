@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf -*-
 from __future__ import print_function
 from __future__ import division
 
@@ -47,7 +49,7 @@ parser.add_argument('--alphabet', type=str, default="楊宋ゑ褄挽連庭ヶ伴
 parser.add_argument('--expr_dir', default='expr', help='Where to store samples and models')
 parser.add_argument('--displayInterval', type=int, default=500, help='Interval to be displayed')
 parser.add_argument('--n_test_disp', type=int, default=10, help='Number of samples to display when test')
-parser.add_argument('--valInterval', type=int, default=500, help='Interval to be displayed')
+parser.add_argument('--valInterval', type=int, default=100, help='Interval to be displayed')
 parser.add_argument('--saveInterval', type=int, default=500, help='Interval to be displayed')
 parser.add_argument('--lr', type=float, default=0.0001, help='learning rate for Critic, not used by adadealta')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
