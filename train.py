@@ -190,8 +190,8 @@ def val(net, dataset, criterion, max_iter=100):
 def trainBatch(net, criterion, optimizer):
     data = train_iter.next()
     cpu_images, cpu_texts = data
-    imshow(torchvision.utils.make_grid(cpu_images))
-    print(cpu_texts)
+    # imshow(torchvision.utils.make_grid(cpu_images))
+    # print(cpu_texts)
     batch_size = cpu_images.size(0)
     utils.loadData(image, cpu_images)
     t, l = converter.encode(cpu_texts)
